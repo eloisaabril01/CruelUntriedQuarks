@@ -365,9 +365,12 @@ transform: translateY(-5px);
   loop 
   muted 
   playsinline 
-  preload="auto"
+  autoplay
+  preload="metadata"
   class="w-full h-full object-cover"
-  src="attached_assets/hero background.mp4">
+  poster="videos/hero-background-poster.jpg">
+  <source src="videos/hero-background.mp4" type="video/mp4">
+  <source src="videos/hero-background-low.mp4" type="video/mp4" media="all and (max-network-speed: 128kbps)">
 </video>
 </div>
 <div class="video-overlay absolute inset-0 bg-gradient-to-r from-black/70 to-black/50"></div>
@@ -394,7 +397,8 @@ transform: translateY(-5px);
 <div class="service-card card-animation bg-white rounded shadow-lg overflow-hidden">
 <div class="h-56 overflow-hidden">
 <video loop muted playsinline preload="metadata" class="w-full h-full object-cover">
-<source src="attached_assets/trucks.mp4" type="video/mp4">
+<source src="videos/trucks.mp4" type="video/mp4">
+<source src="videos/trucks-low.mp4" type="video/mp4" media="all and (max-network-speed: 128kbps)">
 </video>
 </div>
 <div class="p-6">
@@ -1057,21 +1061,32 @@ transform: translateY(-5px);
 </div>
 </footer>
 <script>
-// Video lazy loading
+// Enhanced video loading and playback
 function handleVideoIntersection(entries, observer) {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       const video = entry.target;
       
-      // Start loading the video
-      if (!video.src && video.querySelector('source')) {
-        video.load();
+      // Check connection speed and choose appropriate source
+      if ('connection' in navigator && navigator.connection.downlink < 1) {
+        const lowQualitySource = video.querySelector('source[media*="max-network-speed"]');
+        if (lowQualitySource) {
+          video.src = lowQualitySource.src;
+        }
       }
       
-      // Play video when in view
-      video.play().catch(function(error) {
-        console.log("Video play failed:", error);
-      });
+      // Load and play video
+      video.load();
+      const playPromise = video.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          // Auto-play was prevented, add click to play
+          video.addEventListener('click', () => {
+            video.play();
+          });
+        });
+      }
       
       observer.unobserve(video);
     }
